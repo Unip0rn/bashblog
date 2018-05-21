@@ -648,6 +648,7 @@ EOF
                 delete_includes
                 rm "$filename"
                 rm "$TMPFILE"
+                [[ $git_repo == 'true' && -n $commit_message ]] git commit -m"$comit_message" && [[ $git_push_on_commit == 'true' ]] && git push
             fi
         fi
     done
