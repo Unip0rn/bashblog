@@ -329,9 +329,9 @@ edit() {
     touch -t "$touch_timestamp" "$1"
     chmod 644 "$filename"
     echo "Posted $filename"
+    commit_message="edited $filename"
     if [[ $git_repo == 'true' ]]; then
         git add $filename
-        commit_message="edited $filename"
     fi
     tags_after=$(tags_in_post "$filename")
     relevant_tags=$(echo "$tags_before $tags_after" | tr ',' ' ' | tr ' ' '\n' | sort -u | tr '\n' ' ')
@@ -639,7 +639,6 @@ EOF
             echo "Saved your draft as '$draft'"
             exit
         fi
-        
         if [[ $post_status == t || $post_status == T ]]; then
             echo "Are you sure to trash the post? It will not be saved anywhere." 
             echo "If and only if you are sure to trash this post, type \"YES\""
@@ -661,10 +660,8 @@ EOF
     fi
     chmod 644 "$filename"
     echo "Posted $filename"
-    if [[ $git_repo == 'true' ]]; then
-        git add $filename
-        commit_message="posted ${filename%%.*}"
-    fi
+    commit_message="posted ${filename%%.*}"
+    [[ $git_repo == 'true' ]] && git add $filename
     relevant_tags=$(tags_in_post $filename)
     if [[ -n $relevant_tags ]]; then
         relevant_posts="$(posts_with_tags $relevant_tags) $filename"
@@ -861,7 +858,6 @@ rebuild_tags() {
         rm "$i"
         [[ $git_repo == 'true' ]] && git add $prefix_tags$tagname.html
     done < <(ls -t ./"$prefix_tags"*.tmp.html 2>/dev/null)
-    commit_message="rebuilt tags"
     echo
 }
 
@@ -1083,7 +1079,6 @@ rebuild_all_entries() {
         [[ $git_repo == 'true' ]] && git add $i
         rm "$contentfile"
     done
-    commit_message="rebuilt all entries"
     echo ""
 }
 
@@ -1233,15 +1228,15 @@ do_main() {
     create_css
     create_includes
     [[ $1 == post ]] && write_entry "$@"
-    [[ $1 == rebuild ]] && rebuild_all_entries && rebuild_tags
+    [[ $1 == rebuild ]] && rebuild_all_entries && rebuild_tags && commit_message="rebuilt everything"
     if [[ $1 == delete ]]; then
         if [[ $git_repo == 'true' ]]; then
             git rm $2 &> /dev/null
-            commit_message="deleted $2"
         else
             rm "$2" &> /dev/null 
         fi
         rebuild_tags
+        commit_message="deleted $2"
     fi
     if [[ $1 == edit ]]; then
         if [[ $2 == -n ]]; then
